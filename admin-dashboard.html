@@ -726,6 +726,12 @@ const auth =
 const db =
   getFirestore(app);
 
+const EMAIL_WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbweCjk19apGkcpPunRrnY5EFX3GaS1Wngu-cVbMKUkOIC7RXoJJt4k5O6Qy_TcwrGSF/exec";
+
+const WORKER_DASHBOARD_URL =
+  "https://dtedigitaleducation-lgtm.github.io/dtedigitaleducation-lgtm-DTE-WEBSITE/worker-login.html";
+
 
 const loading =
   document.getElementById("loading");
@@ -939,6 +945,56 @@ taskType.addEventListener(
 
 
 
+
+async function sendPersonalTaskEmail({
+  worker,
+  title,
+  payment,
+  description
+}) {
+
+  if (!worker?.email) {
+    console.warn("Worker email उपलब्ध नाही.");
+    return false;
+  }
+
+  try {
+
+    await fetch(
+      EMAIL_WEB_APP_URL,
+      {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          email: worker.email,
+          workerName: worker.fullName || "Worker",
+          taskTitle: title,
+          payment: payment,
+          description: description,
+          dashboardLink: WORKER_DASHBOARD_URL
+        })
+      }
+    );
+
+    return true;
+
+  }
+  catch(error) {
+
+    console.error(
+      "Personal Task Email Error:",
+      error
+    );
+
+    return false;
+  }
+}
+
+
+
 createTaskForm.addEventListener(
   "submit",
   async event => {
@@ -1013,6 +1069,33 @@ createTaskForm.addEventListener(
 
     try {
 
+      let selectedWorkerData = null;
+
+      if (
+        selectedTaskType === "personal"
+        &&
+        selectedWorkerUid
+      ) {
+
+        const workerSnap =
+          await getDoc(
+            doc(
+              db,
+              "workers",
+              selectedWorkerUid
+            )
+          );
+
+        if (!workerSnap.exists()) {
+          throw new Error(
+            "Selected Worker profile सापडला नाही."
+          );
+        }
+
+        selectedWorkerData =
+          workerSnap.data();
+      }
+
       await addDoc(
         collection(db, "tasks"),
         {
@@ -1031,6 +1114,23 @@ createTaskForm.addEventListener(
         }
       );
 
+      let emailQueued = false;
+
+      if (
+        selectedTaskType === "personal"
+        &&
+        selectedWorkerData
+      ) {
+
+        emailQueued =
+          await sendPersonalTaskEmail({
+            worker: selectedWorkerData,
+            title: title,
+            payment: payment,
+            description: description
+          });
+      }
+
       createTaskForm.reset();
 
       assignedWorkerGroup.style.display = "none";
@@ -1040,7 +1140,13 @@ createTaskForm.addEventListener(
       createTaskMessage.style.background = "#e7f7ed";
       createTaskMessage.style.color = "#146c2e";
       createTaskMessage.textContent =
-        "Task successfully create झाला. Worker Dashboard वर Available Tasks मध्ये दिसेल.";
+        selectedTaskType === "personal"
+          ? (
+              emailQueued
+                ? "Personal Task successfully create झाला. Worker ला email notification send request झाली आहे."
+                : "Personal Task create झाला, पण email notification send request करता आली नाही."
+            )
+          : "Task successfully create झाला. Worker Dashboard वर Available Tasks मध्ये दिसेल.";
 
     }
     catch(error) {
