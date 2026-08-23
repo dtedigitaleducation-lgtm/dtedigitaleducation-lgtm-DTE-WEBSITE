@@ -706,10 +706,22 @@
         >
       </div>
 
+      <div class="payment-field">
+        <label for="upiQrLink">Google Drive UPI QR Link</label>
+        <input
+          id="upiQrLink"
+          type="url"
+          maxlength="500"
+          autocomplete="off"
+          placeholder="https://drive.google.com/file/d/..."
+        >
+      </div>
+
     </div>
 
     <div class="payment-note">
-      Payment मिळण्यासाठी योग्य UPI details टाका. Admin payment करण्यापूर्वी या details verify करा.
+      Payment मिळण्यासाठी योग्य UPI details आणि Google Drive QR link टाका.
+      QR file ची sharing “Anyone with the link → Viewer” असावी.
       UPI PIN, OTP किंवा ATM PIN कधीही इथे टाकू नका.
     </div>
 
@@ -852,6 +864,9 @@ const upiIdInput =
 
 const paymentPhoneInput =
   document.getElementById("paymentPhone");
+
+const upiQrLinkInput =
+  document.getElementById("upiQrLink");
 
 const savePaymentDetailsBtn =
   document.getElementById("savePaymentDetailsBtn");
@@ -2070,6 +2085,9 @@ function loadPaymentDetails(worker) {
   paymentPhoneInput.value =
     worker.paymentPhone || "";
 
+  upiQrLinkInput.value =
+    worker.upiQrLink || "";
+
 }
 
 
@@ -2091,6 +2109,9 @@ async function savePaymentDetails(user) {
   const paymentPhone =
     paymentPhoneInput.value.trim();
 
+  const upiQrLink =
+    upiQrLinkInput.value.trim();
+
   paymentDetailsMessage.textContent = "";
   paymentDetailsMessage.style.color = "";
 
@@ -2109,6 +2130,25 @@ async function savePaymentDetails(user) {
     return;
   }
 
+  let qrUrl;
+
+  try {
+    qrUrl = new URL(upiQrLink);
+  }
+  catch {
+    alert("Valid Google Drive QR link टाका.");
+    return;
+  }
+
+  if (
+    qrUrl.protocol !== "https:"
+    ||
+    qrUrl.hostname !== "drive.google.com"
+  ) {
+    alert("QR link हा https://drive.google.com/ चा असावा.");
+    return;
+  }
+
   try {
 
     savePaymentDetailsBtn.disabled = true;
@@ -2123,6 +2163,7 @@ async function savePaymentDetails(user) {
         upiName: upiName,
         upiId: upiId,
         paymentPhone: paymentPhone,
+        upiQrLink: upiQrLink,
         paymentDetailsUpdatedAt: Timestamp.now()
       }
     );
