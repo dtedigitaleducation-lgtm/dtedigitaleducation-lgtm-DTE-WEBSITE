@@ -187,7 +187,8 @@
     }
 
     .form-group input,
-    .form-group textarea {
+    .form-group textarea,
+    .form-group select {
       width: 100%;
       padding: 12px 14px;
       border: 1px solid #ccd3df;
@@ -575,6 +576,21 @@
                placeholder="https://drive.google.com/...">
       </div>
 
+      <div class="form-group">
+        <label for="taskType">Task Type</label>
+        <select id="taskType" required>
+          <option value="public">Public Task - सर्व workers साठी</option>
+          <option value="personal">Personal Task - फक्त एका worker साठी</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="assignedWorkerGroup" style="display:none;">
+        <label for="assignedWorker">Select Worker</label>
+        <select id="assignedWorker">
+          <option value="">Worker select करा</option>
+        </select>
+      </div>
+
       <button id="createTaskBtn" class="create-task-btn" type="submit">
         Create Task
       </button>
@@ -735,6 +751,15 @@ const taskPayment =
 const taskMaterialLink =
   document.getElementById("taskMaterialLink");
 
+const taskType =
+  document.getElementById("taskType");
+
+const assignedWorkerGroup =
+  document.getElementById("assignedWorkerGroup");
+
+const assignedWorker =
+  document.getElementById("assignedWorker");
+
 const createTaskBtn =
   document.getElementById("createTaskBtn");
 
@@ -854,6 +879,66 @@ async function getWorker(workerUid) {
 
 
 
+
+async function loadWorkerOptions() {
+  try {
+    const snapshot =
+      await getDocs(collection(db, "workers"));
+
+    assignedWorker.innerHTML =
+      `<option value="">Worker select करा</option>`;
+
+    const workers =
+      snapshot.docs
+        .map(workerDoc => ({
+          uid: workerDoc.id,
+          ...workerDoc.data()
+        }))
+        .filter(worker =>
+          worker.accountStatus === "active"
+        )
+        .sort((a, b) =>
+          String(a.fullName || "")
+            .localeCompare(String(b.fullName || ""))
+        );
+
+    workers.forEach(worker => {
+      const option =
+        document.createElement("option");
+
+      option.value = worker.uid;
+      option.textContent =
+        `${worker.fullName || "Worker"} (${worker.workerId || "-"})`;
+
+      assignedWorker.appendChild(option);
+    });
+  }
+  catch(error) {
+    console.error("Worker Options Error:", error);
+  }
+}
+
+
+taskType.addEventListener(
+  "change",
+  () => {
+    const personal =
+      taskType.value === "personal";
+
+    assignedWorkerGroup.style.display =
+      personal ? "grid" : "none";
+
+    assignedWorker.required =
+      personal;
+
+    if (!personal) {
+      assignedWorker.value = "";
+    }
+  }
+);
+
+
+
 createTaskForm.addEventListener(
   "submit",
   async event => {
@@ -876,6 +961,21 @@ createTaskForm.addEventListener(
 
     const materialLink =
       taskMaterialLink.value.trim();
+
+    const selectedTaskType =
+      taskType.value;
+
+    const selectedWorkerUid =
+      assignedWorker.value;
+
+    if (
+      selectedTaskType === "personal"
+      &&
+      !selectedWorkerUid
+    ) {
+      alert("Personal Task साठी Worker select करा.");
+      return;
+    }
 
     if (
       !title
@@ -920,6 +1020,11 @@ createTaskForm.addEventListener(
           description,
           payment,
           materialLink,
+          taskType: selectedTaskType,
+          assignedTo:
+            selectedTaskType === "personal"
+              ? selectedWorkerUid
+              : null,
           status: "available",
           createdAt: Timestamp.now(),
           createdBy: currentAdmin.uid
@@ -927,6 +1032,9 @@ createTaskForm.addEventListener(
       );
 
       createTaskForm.reset();
+
+      assignedWorkerGroup.style.display = "none";
+      assignedWorker.required = false;
 
       createTaskMessage.style.display = "block";
       createTaskMessage.style.background = "#e7f7ed";
@@ -2684,6 +2792,8 @@ onAuthStateChanged(
 
 
       await loadAllWorkers();
+
+      await loadWorkerOptions();
 
       await loadSubmittedTasks();
 
