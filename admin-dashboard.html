@@ -960,24 +960,100 @@ async function sendPersonalTaskEmail({
 
   try {
 
-    await fetch(
-      EMAIL_WEB_APP_URL,
-      {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify({
-          email: worker.email,
-          workerName: worker.fullName || "Worker",
-          taskTitle: title,
-          payment: payment,
-          description: description,
-          dashboardLink: WORKER_DASHBOARD_URL
-        })
-      }
+    const iframeName =
+      "dteEmailFrame_" + Date.now();
+
+    const iframe =
+      document.createElement("iframe");
+
+    iframe.name =
+      iframeName;
+
+    iframe.style.display =
+      "none";
+
+    document.body.appendChild(
+      iframe
     );
+
+
+    const form =
+      document.createElement("form");
+
+    form.method =
+      "POST";
+
+    form.action =
+      EMAIL_WEB_APP_URL;
+
+    form.target =
+      iframeName;
+
+    form.style.display =
+      "none";
+
+
+    const payload = {
+      email:
+        worker.email,
+
+      workerName:
+        worker.fullName || "Worker",
+
+      taskTitle:
+        title,
+
+      payment:
+        String(payment),
+
+      description:
+        description,
+
+      dashboardLink:
+        WORKER_DASHBOARD_URL
+    };
+
+
+    Object.entries(payload)
+      .forEach(([key, value]) => {
+
+        const input =
+          document.createElement("input");
+
+        input.type =
+          "hidden";
+
+        input.name =
+          key;
+
+        input.value =
+          value ?? "";
+
+        form.appendChild(
+          input
+        );
+
+      });
+
+
+    document.body.appendChild(
+      form
+    );
+
+
+    form.submit();
+
+
+    setTimeout(
+      () => {
+
+        form.remove();
+        iframe.remove();
+
+      },
+      8000
+    );
+
 
     return true;
 
