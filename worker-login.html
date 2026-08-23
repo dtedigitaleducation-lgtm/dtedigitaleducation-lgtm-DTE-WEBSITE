@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DTE Worker Login</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fb;
+      padding: 20px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      padding: 30px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #07152f;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #0b57d0;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #0b57d0;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+      white-space: pre-line;
+      line-height: 1.5;
+    }
+
+    .error {
+      display: block !important;
+      background: #fdeaea;
+      color: #a40000;
+    }
+
+    .warning {
+      display: block !important;
+      background: #fff4e5;
+      color: #8a4b00;
+    }
+
+    .success {
+      display: block !important;
+      background: #e7f7ed;
+      color: #146c2e;
+    }
+
+    .register-link {
+      margin-top: 18px;
+      text-align: center;
+    }
+
+    .register-link a {
+      color: #0b57d0;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+
+    <h1>DTE Worker Login</h1>
+    <p class="subtitle">
+      Digital Technology Education
+    </p>
+
+    <form id="loginForm">
+
+      <label for="email">
+        Email
+      </label>
+
+      <input
+        type="email"
+        id="email"
+        required
+        placeholder="Enter your registered email"
+      />
+
+      <label for="password">
+        Password
+      </label>
+
+      <input
+        type="password"
+        id="password"
+        required
+        placeholder="Enter your password"
+      />
+
+      <button
+        type="submit"
+        id="loginBtn"
+      >
+        Login
+      </button>
+
+      <div id="message"></div>
+
+    </form>
+
+    <div class="register-link">
+      New worker?
+      <a href="register.html">
+        Register here
+      </a>
+    </div>
+
+  </div>
+
+
+  <script type="module">
+
+    import {
+      initializeApp
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      updateDoc
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+
+    const firebaseConfig = {
+
+      apiKey:
+        "AIzaSyB55Au5qzCGpSvju4_GtdvYLkInPD5wmGc",
+
+      authDomain:
+        "dte-digital-education.firebaseapp.com",
+
+      projectId:
+        "dte-digital-education",
+
+      storageBucket:
+        "dte-digital-education.firebasestorage.app",
+
+      messagingSenderId:
+        "115032743682",
+
+      appId:
+        "1:115032743682:web:ca98f116d2fe6b5173ac1b"
+
+    };
+
+
+    const app =
+      initializeApp(firebaseConfig);
+
+    const auth =
+      getAuth(app);
+
+    const db =
+      getFirestore(app);
+
+
+    const form =
+      document.getElementById("loginForm");
+
+    const messageBox =
+      document.getElementById("message");
+
+    const loginBtn =
+      document.getElementById("loginBtn");
+
+
+    function showMessage(
+      message,
+      type
+    ) {
+
+      messageBox.textContent =
+        message;
+
+      messageBox.className =
+        type;
+
+      messageBox.style.display =
+        "block";
+
+    }
+
+
+    form.addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+        messageBox.style.display =
+          "none";
+
+        messageBox.className =
+          "";
+
+
+        const email =
+          document
+            .getElementById("email")
+            .value
+            .trim();
+
+
+        const password =
+          document
+            .getElementById("password")
+            .value;
+
+
+        try {
+
+          loginBtn.disabled =
+            true;
+
+          loginBtn.textContent =
+            "Checking...";
+
+
+          const userCredential =
+            await signInWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+
+
+          const user =
+            userCredential.user;
+
+
+          /*
+          ============================
+          EMAIL VERIFICATION CHECK
+          ============================
+          */
+
+          if (!user.emailVerified) {
+
+            await signOut(auth);
+
+            showMessage(
+              "तुमचा Email अजून Verify झालेला नाही.\nVerification email मधील link वर click करून पुन्हा Login करा.",
+              "warning"
+            );
+
+            return;
+
+          }
+
+
+          /*
+          ============================
+          LOAD WORKER PROFILE
+          ============================
+          */
+
+          const workerRef =
+            doc(
+              db,
+              "workers",
+              user.uid
+            );
+
+
+          const workerSnap =
+            await getDoc(workerRef);
+
+
+          if (!workerSnap.exists()) {
+
+            await signOut(auth);
+
+            showMessage(
+              "Worker profile सापडला नाही. कृपया DTE Administration शी संपर्क करा.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          const workerData =
+            workerSnap.data();
+
+
+          /*
+          ============================
+          WORKER ROLE CHECK
+          ============================
+          */
+
+          if (
+            workerData.role !==
+            "worker"
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "हा account DTE Worker account नाही.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          /*
+          ============================
+          BLOCKED ACCOUNT
+          ============================
+          */
+
+          if (
+            workerData.accountStatus ===
+            "blocked"
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "Your account has been blocked by DTE Administration.\nकृपया DTE Admin शी संपर्क करा.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          /*
+          ============================
+          PENDING ACCOUNT
+          ============================
+          */
+
+          if (
+            workerData.accountStatus ===
+            "pending"
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "तुमचा Worker account अजून DTE Admin approval साठी Pending आहे.",
+              "warning"
+            );
+
+            return;
+
+          }
+
+
+          /*
+          ============================
+          SUSPENDED ACCOUNT
+          ============================
+          */
+
+          if (
+            workerData.accountStatus ===
+            "suspended"
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "तुमचा Worker account Suspended आहे.\nकृपया DTE Admin शी संपर्क करा.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          /*
+          ============================
+          UNKNOWN / INACTIVE STATUS
+          ============================
+          */
+
+          if (
+            workerData.accountStatus !==
+            "active"
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "तुमचा Worker account सध्या Active नाही.\nकृपया DTE Admin शी संपर्क करा.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          /*
+          ============================
+          ACTIVE WORKER
+          ============================
+          */
+
+          await updateDoc(
+            workerRef,
+            {
+              emailVerified: true
+            }
+          );
+
+
+          showMessage(
+            `Login Successful!
+
+Worker ID: ${workerData.workerId || "-"}
+
+Dashboard उघडत आहे...`,
+            "success"
+          );
+
+
+          setTimeout(
+            () => {
+
+              window.location.href =
+                "worker-dashboard.html";
+
+            },
+            800
+          );
+
+        }
+
+        catch(error) {
+
+          console.error(error);
+
+
+          let msg =
+            "Login करताना error आला.";
+
+
+          if (
+            error.code ===
+            "auth/invalid-credential"
+          ) {
+
+            msg =
+              "Email किंवा Password चुकीचा आहे.";
+
+          }
+
+          else if (
+            error.code ===
+            "auth/too-many-requests"
+          ) {
+
+            msg =
+              "खूप Login attempts झाले आहेत. थोड्या वेळाने पुन्हा प्रयत्न करा.";
+
+          }
+
+          else if (
+            error.code ===
+            "auth/user-disabled"
+          ) {
+
+            msg =
+              "हा Login account disabled आहे.";
+
+          }
+
+          else {
+
+            msg +=
+              "\n\n" +
+              error.message;
+
+          }
+
+
+          showMessage(
+            msg,
+            "error"
+          );
+
+        }
+
+        finally {
+
+          loginBtn.disabled =
+            false;
+
+          loginBtn.textContent =
+            "Login";
+
+        }
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>

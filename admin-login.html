@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>DTE Admin Login</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fb;
+      padding: 20px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      padding: 32px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #07152f;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #0b57d0;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #07152f;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 9px;
+      display: none;
+      white-space: pre-line;
+    }
+
+    .error {
+      display: block !important;
+      background: #fdeaea;
+      color: #a40000;
+    }
+
+    .success {
+      display: block !important;
+      background: #e7f7ed;
+      color: #146c2e;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+
+    <h1>DTE Admin Login</h1>
+    <p class="subtitle">
+      Digital Technology Education
+    </p>
+
+    <form id="loginForm">
+
+      <label for="email">
+        Admin Email
+      </label>
+
+      <input
+        type="email"
+        id="email"
+        required
+        placeholder="Enter admin email"
+      >
+
+      <label for="password">
+        Password
+      </label>
+
+      <input
+        type="password"
+        id="password"
+        required
+        placeholder="Enter password"
+      >
+
+      <button
+        type="submit"
+        id="loginBtn"
+      >
+        Admin Login
+      </button>
+
+      <div id="message"></div>
+
+    </form>
+
+  </div>
+
+
+  <script type="module">
+
+    import {
+      initializeApp
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+
+    import {
+      getFirestore,
+      doc,
+      getDoc
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+
+    const firebaseConfig = {
+
+      apiKey:
+        "AIzaSyB55Au5qzCGpSvju4_GtdvYLkInPD5wmGc",
+
+      authDomain:
+        "dte-digital-education.firebaseapp.com",
+
+      projectId:
+        "dte-digital-education",
+
+      storageBucket:
+        "dte-digital-education.firebasestorage.app",
+
+      messagingSenderId:
+        "115032743682",
+
+      appId:
+        "1:115032743682:web:ca98f116d2fe6b5173ac1b"
+
+    };
+
+
+    const app =
+      initializeApp(firebaseConfig);
+
+    const auth =
+      getAuth(app);
+
+    const db =
+      getFirestore(app);
+
+
+    const form =
+      document.getElementById("loginForm");
+
+    const loginBtn =
+      document.getElementById("loginBtn");
+
+    const messageBox =
+      document.getElementById("message");
+
+
+    function showMessage(
+      message,
+      type
+    ) {
+
+      messageBox.textContent =
+        message;
+
+      messageBox.className =
+        type;
+
+    }
+
+
+    form.addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+        messageBox.className = "";
+        messageBox.style.display = "none";
+
+
+        const email =
+          document
+            .getElementById("email")
+            .value
+            .trim();
+
+
+        const password =
+          document
+            .getElementById("password")
+            .value;
+
+
+        try {
+
+          loginBtn.disabled =
+            true;
+
+          loginBtn.textContent =
+            "Checking...";
+
+
+          const credential =
+            await signInWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+
+
+          const user =
+            credential.user;
+
+
+          const adminRef =
+            doc(
+              db,
+              "admins",
+              user.uid
+            );
+
+
+          const adminSnap =
+            await getDoc(
+              adminRef
+            );
+
+
+          if (
+            !adminSnap.exists()
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "हा account DTE Admin account नाही.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          const admin =
+            adminSnap.data();
+
+
+          if (
+            admin.role !== "admin"
+          ) {
+
+            await signOut(auth);
+
+            showMessage(
+              "Admin permission उपलब्ध नाही.",
+              "error"
+            );
+
+            return;
+
+          }
+
+
+          showMessage(
+            "Admin Login Successful! Dashboard उघडत आहे...",
+            "success"
+          );
+
+
+          setTimeout(
+            () => {
+
+              window.location.href =
+                "admin-dashboard.html";
+
+            },
+            700
+          );
+
+        }
+        catch(error) {
+
+          console.error(error);
+
+          let msg =
+            "Admin Login failed.";
+
+
+          if (
+            error.code ===
+            "auth/invalid-credential"
+          ) {
+
+            msg =
+              "Admin Email किंवा Password चुकीचा आहे.";
+
+          }
+
+
+          showMessage(
+            msg,
+            "error"
+          );
+
+        }
+        finally {
+
+          loginBtn.disabled =
+            false;
+
+          loginBtn.textContent =
+            "Admin Login";
+
+        }
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>

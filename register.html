@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DTE Worker Registration</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f7fb;
+      color: #172033;
+      padding: 30px 15px;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #07152f;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      margin: 25px 0 15px;
+      font-size: 18px;
+      color: #0b57d0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #0b57d0;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #0b57d0;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 10px;
+      display: none;
+      white-space: pre-line;
+    }
+
+    .success {
+      display: block !important;
+      background: #e7f7ed;
+      color: #146c2e;
+    }
+
+    .error {
+      display: block !important;
+      background: #fdeaea;
+      color: #a40000;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .full {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>DTE Worker Registration</h1>
+    <p class="subtitle">Digital Technology Education</p>
+
+    <form id="registrationForm">
+
+      <h2 class="section-title">Personal Details</h2>
+
+      <div class="grid">
+
+        <div>
+          <label for="fullName">Full Name</label>
+          <input type="text" id="fullName" required />
+        </div>
+
+        <div>
+          <label for="dob">Date of Birth</label>
+          <input type="date" id="dob" required />
+        </div>
+
+        <div>
+          <label for="gender">Gender</label>
+          <select id="gender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="mobile">Mobile Number</label>
+          <input
+            type="tel"
+            id="mobile"
+            maxlength="10"
+            pattern="[0-9]{10}"
+            required
+          />
+        </div>
+
+        <div class="full">
+          <label for="email">Email / Gmail</label>
+          <input type="email" id="email" required />
+        </div>
+
+      </div>
+
+
+      <h2 class="section-title">Address</h2>
+
+      <div class="grid">
+
+        <div class="full">
+          <label for="address">Full Address</label>
+          <textarea id="address" required></textarea>
+        </div>
+
+        <div>
+          <label for="city">City / Village</label>
+          <input type="text" id="city" required />
+        </div>
+
+        <div>
+          <label for="district">District</label>
+          <input type="text" id="district" required />
+        </div>
+
+        <div>
+          <label for="state">State</label>
+          <input
+            type="text"
+            id="state"
+            value="Maharashtra"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="pincode">PIN Code</label>
+          <input
+            type="text"
+            id="pincode"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            required
+          />
+        </div>
+
+      </div>
+
+
+      <h2 class="section-title">Account Security</h2>
+
+      <div class="grid">
+
+        <div>
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            minlength="8"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="confirmPassword">Confirm Password</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            minlength="8"
+            required
+          />
+        </div>
+
+      </div>
+
+      <button type="submit" id="submitBtn">
+        Register as Worker
+      </button>
+
+      <div id="message"></div>
+
+    </form>
+
+  </div>
+
+
+  <script type="module">
+
+    import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      sendEmailVerification
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      serverTimestamp
+    }
+    from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyB55Au5qzCGpSvju4_GtdvYLkInPD5wmGc",
+  authDomain: "dte-digital-education.firebaseapp.com",
+  projectId: "dte-digital-education",
+  storageBucket: "dte-digital-education.firebasestorage.app",
+  messagingSenderId: "115032743682",
+  appId: "1:115032743682:web:ca98f116d2fe6b5173ac1b"
+
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+
+    const form =
+      document.getElementById("registrationForm");
+
+    const messageBox =
+      document.getElementById("message");
+
+    const submitBtn =
+      document.getElementById("submitBtn");
+
+
+    function showMessage(message, type) {
+
+      messageBox.textContent = message;
+      messageBox.className = type;
+
+    }
+
+
+    function createWorkerId(uid) {
+
+      const shortUid = uid
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .substring(0, 8)
+        .toUpperCase();
+
+      return `DTE-W-${shortUid}`;
+
+    }
+
+
+    form.addEventListener("submit", async (event) => {
+
+      event.preventDefault();
+
+      messageBox.style.display = "none";
+      messageBox.className = "";
+
+
+      const fullName =
+        document.getElementById("fullName").value.trim();
+
+      const dob =
+        document.getElementById("dob").value;
+
+      const gender =
+        document.getElementById("gender").value;
+
+      const mobile =
+        document.getElementById("mobile").value.trim();
+
+      const email =
+        document.getElementById("email").value.trim();
+
+      const address =
+        document.getElementById("address").value.trim();
+
+      const city =
+        document.getElementById("city").value.trim();
+
+      const district =
+        document.getElementById("district").value.trim();
+
+      const state =
+        document.getElementById("state").value.trim();
+
+      const pincode =
+        document.getElementById("pincode").value.trim();
+
+      const password =
+        document.getElementById("password").value;
+
+      const confirmPassword =
+        document.getElementById("confirmPassword").value;
+
+
+      if (password !== confirmPassword) {
+
+        showMessage(
+          "Password आणि Confirm Password जुळत नाहीत.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      try {
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Registering...";
+
+
+        const userCredential =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+
+        const user = userCredential.user;
+
+
+        const workerId =
+          createWorkerId(user.uid);
+
+
+        await setDoc(
+          doc(db, "workers", user.uid),
+          {
+
+            uid: user.uid,
+
+            workerId: workerId,
+
+            role: "worker",
+
+            fullName: fullName,
+
+            dob: dob,
+
+            gender: gender,
+
+            mobile: mobile,
+
+            email: email,
+
+            address: {
+              fullAddress: address,
+              city: city,
+              district: district,
+              state: state,
+              pincode: pincode
+            },
+
+            accountStatus: "pending",
+
+            emailVerified: false,
+
+            totalTasks: 0,
+
+            completedTasks: 0,
+
+            approvedTasks: 0,
+
+            rejectedTasks: 0,
+
+            totalEarnings: 0,
+
+            pendingEarnings: 0,
+
+            paidEarnings: 0,
+
+            createdAt: serverTimestamp()
+
+          }
+        );
+
+
+        await sendEmailVerification(user);
+
+
+        showMessage(
+`Registration Successful!
+
+Your Worker ID:
+${workerId}
+
+Verification email:
+${email}
+
+Email verify करा.
+
+त्यानंतर Admin approval झाल्यावर Worker Login करता येईल.`,
+          "success"
+        );
+
+
+        form.reset();
+
+      }
+      catch (error) {
+
+        console.error(error);
+
+        let msg =
+          "Registration करताना error आला.";
+
+        if (
+          error.code ===
+          "auth/email-already-in-use"
+        ) {
+
+          msg =
+            "या email वर account आधीच तयार आहे.";
+
+        }
+
+        else if (
+          error.code ===
+          "auth/weak-password"
+        ) {
+
+          msg =
+            "Password कमीत कमी 8 characters ठेवा.";
+
+        }
+
+        else if (
+          error.code ===
+          "auth/invalid-email"
+        ) {
+
+          msg =
+            "Valid email address टाका.";
+
+        }
+
+        else if (
+          error.code ===
+          "permission-denied"
+        ) {
+
+          msg =
+            "Firestore permission denied. Firestore Rules सेट कराव्या लागतील.";
+
+        }
+
+        else {
+
+          msg += "\n\n" + error.message;
+
+        }
+
+
+        showMessage(msg, "error");
+
+      }
+      finally {
+
+        submitBtn.disabled = false;
+
+        submitBtn.textContent =
+          "Register as Worker";
+
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>

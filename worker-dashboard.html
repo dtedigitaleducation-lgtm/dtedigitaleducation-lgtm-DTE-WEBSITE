@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>DTE Worker Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f7fb;
+      color: #172033;
+    }
+
+    .topbar {
+      background: #07152f;
+      color: white;
+      padding: 18px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h1 {
+      font-size: 22px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .notification-wrap {
+      position: relative;
+    }
+
+    .notification-btn {
+      position: relative;
+      border: none;
+      background: #ffffff;
+      color: #07152f;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: #e53935;
+      color: white;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      border: 2px solid #07152f;
+    }
+
+    .notification-panel {
+      position: absolute;
+      right: 0;
+      top: 54px;
+      width: min(380px, 92vw);
+      max-height: 460px;
+      overflow-y: auto;
+      background: white;
+      color: #172033;
+      border-radius: 14px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.18);
+      padding: 14px;
+      display: none;
+      z-index: 2000;
+    }
+
+    .notification-panel.open {
+      display: block;
+    }
+
+    .notification-panel h3 {
+      margin-bottom: 12px;
+      color: #07152f;
+    }
+
+    .notification-item {
+      border: 1px solid #e2e6ee;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+
+    .notification-item.unread {
+      background: #f1f6ff;
+      border-color: #bfd3ff;
+    }
+
+    .notification-item h4 {
+      margin-bottom: 6px;
+      color: #07152f;
+    }
+
+    .notification-item p {
+      margin: 4px 0;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .notification-time {
+      margin-top: 7px;
+      font-size: 12px;
+      color: #777;
+    }
+
+    .notification-empty {
+      color: #777;
+      text-align: center;
+      padding: 16px 8px;
+    }
+
+    .logout-btn {
+      border: none;
+      background: #e53935;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .container {
+      width: 92%;
+      max-width: 1200px;
+      margin: 30px auto;
+    }
+
+    .profile-card {
+      background: white;
+      border-radius: 18px;
+      padding: 25px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #0b57d0;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    .profile-info h2 {
+      margin-bottom: 7px;
+    }
+
+    .profile-info p {
+      margin: 5px 0;
+      color: #555;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      background: #e7f7ed;
+      color: #146c2e;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .stat-card h3 {
+      font-size: 15px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .stat-card strong {
+      font-size: 26px;
+      color: #07152f;
+    }
+
+    .section {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 25px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .section h2 {
+      margin-bottom: 18px;
+      color: #07152f;
+    }
+
+    .payment-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .payment-field label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: bold;
+      color: #172033;
+    }
+
+    .payment-field input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #bbb;
+      border-radius: 9px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .payment-field input:focus {
+      border-color: #0b57d0;
+    }
+
+    .payment-note {
+      margin: 14px 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: #fff4e5;
+      color: #6d4c00;
+      line-height: 1.5;
+    }
+
+    .save-payment-btn {
+      border: none;
+      background: #0b57d0;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .save-payment-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .payment-save-message {
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    @media(max-width:650px) {
+      .payment-details-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .task-card {
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .task-card h3 {
+      margin-bottom: 10px;
+    }
+
+    .task-card p {
+      margin: 8px 0;
+    }
+
+    .material-link {
+      display: inline-block;
+      margin-top: 8px;
+      color: #0b57d0;
+      font-weight: bold;
+    }
+
+    .accept-btn {
+      display: block;
+      margin-top: 15px;
+      border: none;
+      background: #0b57d0;
+      color: white;
+      padding: 11px 18px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .accept-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .deadline {
+      margin-top: 15px;
+      padding: 12px;
+      background: #fff4e5;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    .countdown {
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #b3261e;
+    }
+
+    .submit-box {
+      margin-top: 18px;
+      padding: 16px;
+      background: #f6f9ff;
+      border: 1px solid #d7e3ff;
+      border-radius: 12px;
+    }
+
+    .submit-box label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .submit-input {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+
+    .submit-btn {
+      border: none;
+      background: #146c2e;
+      color: white;
+      padding: 11px 18px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .submit-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .rejected-card {
+      border-color: #f1b8b8;
+      background: #fffafa;
+    }
+
+    .reject-reason {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #fdeaea;
+      color: #8a1111;
+    }
+
+    .resubmit-box {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #d7e3ff;
+      border-radius: 12px;
+      background: #f6f9ff;
+    }
+
+    .resubmit-box label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .resubmit-btn {
+      border: none;
+      background: #0b57d0;
+      color: white;
+      padding: 11px 18px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .resubmit-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .empty-box {
+      padding: 24px;
+      border: 1px dashed #bbb;
+      border-radius: 12px;
+      text-align: center;
+      color: #777;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px 20px;
+      font-size: 18px;
+    }
+
+    .error-box {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #fdeaea;
+      color: #a40000;
+      padding: 20px;
+      border-radius: 12px;
+      display: none;
+    }
+
+    @media(max-width:900px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media(max-width:550px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-card {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+
+  <div>
+    <h1>DTE Worker Dashboard</h1>
+    <small>Digital Technology Education</small>
+  </div>
+
+  <div class="topbar-actions">
+
+    <div class="notification-wrap">
+
+      <button
+        id="notificationBtn"
+        class="notification-btn"
+        type="button"
+        aria-label="Notifications"
+      >
+        🔔
+        <span
+          id="notificationBadge"
+          class="notification-badge"
+        >
+          0
+        </span>
+      </button>
+
+      <div
+        id="notificationPanel"
+        class="notification-panel"
+      >
+        <h3>Notifications</h3>
+
+        <div id="notificationList">
+          <div class="notification-empty">
+            Notifications loading...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <button class="logout-btn" id="logoutBtn">
+      Logout
+    </button>
+
+  </div>
+
+</header>
+
+
+<div id="loading" class="loading">
+  Loading Worker Dashboard...
+</div>
+
+<div id="errorBox" class="error-box"></div>
+
+
+<main id="dashboard" class="container" style="display:none;">
+
+
+  <section class="profile-card">
+
+    <div class="avatar" id="avatar">
+      W
+    </div>
+
+    <div class="profile-info">
+
+      <h2 id="workerName">
+        Worker
+      </h2>
+
+      <p>
+        <strong>Worker ID:</strong>
+        <span id="workerId">-</span>
+      </p>
+
+      <p>
+        <strong>Email:</strong>
+        <span id="workerEmail">-</span>
+      </p>
+
+      <span class="status" id="workerStatus">
+        Active
+      </span>
+
+    </div>
+
+  </section>
+
+
+  <section class="stats-grid">
+
+    <div class="stat-card">
+      <h3>Total Tasks</h3>
+      <strong id="totalTasks">0</strong>
+    </div>
+
+    <div class="stat-card">
+      <h3>Completed Tasks</h3>
+      <strong id="completedTasks">0</strong>
+    </div>
+
+    <div class="stat-card">
+      <h3>Approved Tasks</h3>
+      <strong id="approvedTasks">0</strong>
+    </div>
+
+    <div class="stat-card">
+      <h3>Rejected Tasks</h3>
+      <strong id="rejectedTasks">0</strong>
+    </div>
+
+  </section>
+
+
+  <section class="stats-grid">
+
+    <div class="stat-card">
+      <h3>Total Earnings</h3>
+      <strong>
+        ₹<span id="totalEarnings">0</span>
+      </strong>
+    </div>
+
+    <div class="stat-card">
+      <h3>Pending Earnings</h3>
+      <strong>
+        ₹<span id="pendingEarnings">0</span>
+      </strong>
+    </div>
+
+    <div class="stat-card">
+      <h3>Paid Earnings</h3>
+      <strong>
+        ₹<span id="paidEarnings">0</span>
+      </strong>
+    </div>
+
+    <div class="stat-card">
+      <h3>Account</h3>
+      <strong id="accountShortStatus">
+        Active
+      </strong>
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <h2>Available Tasks</h2>
+
+    <div id="availableTasks">
+
+      <div class="empty-box">
+        Available tasks loading...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <h2>My Active Task</h2>
+
+    <div id="activeTask">
+
+      <div class="empty-box">
+        तुम्ही अजून कोणताही task accept केलेला नाही.
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <h2>Rejected Tasks</h2>
+
+    <div id="rejectedTasksList">
+      <div class="empty-box">
+        Rejected tasks loading...
+      </div>
+    </div>
+
+  </section>
+
+
+  <section class="section">
+
+    <h2>Payment Details / UPI</h2>
+
+    <div class="payment-details-grid">
+
+      <div class="payment-field">
+        <label for="upiName">UPI Account Holder Name</label>
+        <input
+          id="upiName"
+          type="text"
+          maxlength="80"
+          placeholder="उदा. Dipak Suryawanshi"
+        >
+      </div>
+
+      <div class="payment-field">
+        <label for="upiId">UPI ID</label>
+        <input
+          id="upiId"
+          type="text"
+          maxlength="100"
+          autocomplete="off"
+          placeholder="उदा. name@upi"
+        >
+      </div>
+
+      <div class="payment-field">
+        <label for="paymentPhone">UPI Registered Mobile Number</label>
+        <input
+          id="paymentPhone"
+          type="tel"
+          inputmode="numeric"
+          maxlength="10"
+          autocomplete="off"
+          placeholder="10 digit mobile number"
+        >
+      </div>
+
+    </div>
+
+    <div class="payment-note">
+      Payment मिळण्यासाठी योग्य UPI details टाका. Admin payment करण्यापूर्वी या details verify करा.
+      UPI PIN, OTP किंवा ATM PIN कधीही इथे टाकू नका.
+    </div>
+
+    <button
+      id="savePaymentDetailsBtn"
+      class="save-payment-btn"
+      type="button"
+    >
+      Save Payment Details
+    </button>
+
+    <div
+      id="paymentDetailsMessage"
+      class="payment-save-message"
+    ></div>
+
+  </section>
+
+
+  <section class="section">
+
+    <h2>Payment History</h2>
+
+    <div id="paymentHistory">
+      <div class="empty-box">
+        Payment history loading...
+      </div>
+    </div>
+
+  </section>
+
+
+</main>
+
+
+<script type="module">
+
+import {
+  initializeApp
+}
+from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+}
+from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  runTransaction,
+  updateDoc,
+  Timestamp
+}
+from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyB55Au5qzCGpSvju4_GtdvYLkInPD5wmGc",
+
+  authDomain:
+    "dte-digital-education.firebaseapp.com",
+
+  projectId:
+    "dte-digital-education",
+
+  storageBucket:
+    "dte-digital-education.firebasestorage.app",
+
+  messagingSenderId:
+    "115032743682",
+
+  appId:
+    "1:115032743682:web:ca98f116d2fe6b5173ac1b"
+
+};
+
+
+const app =
+  initializeApp(firebaseConfig);
+
+const auth =
+  getAuth(app);
+
+const db =
+  getFirestore(app);
+
+
+const loading =
+  document.getElementById("loading");
+
+const dashboard =
+  document.getElementById("dashboard");
+
+const errorBox =
+  document.getElementById("errorBox");
+
+const notificationBtn =
+  document.getElementById("notificationBtn");
+
+const notificationBadge =
+  document.getElementById("notificationBadge");
+
+const notificationPanel =
+  document.getElementById("notificationPanel");
+
+const notificationList =
+  document.getElementById("notificationList");
+
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+const availableTasksBox =
+  document.getElementById("availableTasks");
+
+const activeTaskBox =
+  document.getElementById("activeTask");
+
+const rejectedTasksBox =
+  document.getElementById("rejectedTasksList");
+
+const upiNameInput =
+  document.getElementById("upiName");
+
+const upiIdInput =
+  document.getElementById("upiId");
+
+const paymentPhoneInput =
+  document.getElementById("paymentPhone");
+
+const savePaymentDetailsBtn =
+  document.getElementById("savePaymentDetailsBtn");
+
+const paymentDetailsMessage =
+  document.getElementById("paymentDetailsMessage");
+
+
+const paymentHistoryBox =
+  document.getElementById("paymentHistory");
+
+
+let countdownTimer = null;
+
+
+function showError(message) {
+
+  loading.style.display =
+    "none";
+
+  dashboard.style.display =
+    "none";
+
+  errorBox.style.display =
+    "block";
+
+  errorBox.textContent =
+    message;
+
+}
+
+
+
+
+function notificationDate(value) {
+
+  if (!value || !value.toDate) {
+    return "-";
+  }
+
+  try {
+    return value.toDate().toLocaleString();
+  }
+  catch {
+    return "-";
+  }
+}
+
+
+
+async function loadNotifications(user) {
+
+  try {
+
+    const q =
+      query(
+        collection(db, "notifications"),
+        where("recipientId", "==", user.uid)
+      );
+
+    const snapshot =
+      await getDocs(q);
+
+    const items =
+      snapshot.docs.map(notificationDoc => ({
+        id: notificationDoc.id,
+        ...notificationDoc.data()
+      }));
+
+    items.sort((a, b) => {
+
+      const aTime =
+        a.createdAt?.toMillis?.() ?? 0;
+
+      const bTime =
+        b.createdAt?.toMillis?.() ?? 0;
+
+      return bTime - aTime;
+    });
+
+    const unreadCount =
+      items.filter(item => item.read !== true).length;
+
+    notificationBadge.textContent =
+      unreadCount > 99 ? "99+" : String(unreadCount);
+
+    notificationBadge.style.display =
+      unreadCount > 0 ? "flex" : "none";
+
+    notificationList.innerHTML = "";
+
+    if (items.length === 0) {
+
+      notificationList.innerHTML = `
+        <div class="notification-empty">
+          सध्या कोणतीही notification नाही.
+        </div>
+      `;
+
+      return;
+    }
+
+    items.forEach(item => {
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "notification-item"
+        + (item.read === true ? "" : " unread");
+
+      card.innerHTML = `
+        <h4>${item.title || "Notification"}</h4>
+        <p>${item.message || ""}</p>
+        <div class="notification-time">
+          ${notificationDate(item.createdAt)}
+        </div>
+      `;
+
+      notificationList.appendChild(card);
+    });
+
+  }
+  catch(error) {
+
+    console.error(
+      "Notifications Load Error:",
+      error
+    );
+
+    notificationList.innerHTML = `
+      <div class="notification-empty">
+        Notifications load करताना error आला.
+      </div>
+    `;
+  }
+}
+
+
+
+async function markAllNotificationsRead(user) {
+
+  try {
+
+    const q =
+      query(
+        collection(db, "notifications"),
+        where("recipientId", "==", user.uid)
+      );
+
+    const snapshot =
+      await getDocs(q);
+
+    const unreadDocs =
+      snapshot.docs.filter(
+        notificationDoc =>
+          notificationDoc.data().read !== true
+      );
+
+    await Promise.all(
+      unreadDocs.map(
+        notificationDoc =>
+          updateDoc(
+            doc(
+              db,
+              "notifications",
+              notificationDoc.id
+            ),
+            {
+              read: true
+            }
+          )
+      )
+    );
+
+    await loadNotifications(user);
+
+  }
+  catch(error) {
+
+    console.error(
+      "Mark Notifications Read Error:",
+      error
+    );
+  }
+}
+
+
+
+
+async function createAdminNotification({
+  user,
+  title,
+  message,
+  type
+}) {
+
+  try {
+
+    await addDoc(
+      collection(db, "notifications"),
+      {
+        recipientId: "admin",
+        recipientType: "admin",
+        senderId: user.uid,
+        title: title,
+        message: message,
+        type: type,
+        read: false,
+        createdAt: Timestamp.now()
+      }
+    );
+
+  }
+  catch(error) {
+
+    console.error(
+      "Admin Notification Error:",
+      error
+    );
+
+  }
+
+}
+
+
+
+async function hasActiveTask(userId) {
+
+  const q =
+    query(
+      collection(db, "tasks"),
+      where(
+        "acceptedBy",
+        "==",
+        userId
+      ),
+      where(
+        "status",
+        "==",
+        "accepted"
+      )
+    );
+
+  const snapshot =
+    await getDocs(q);
+
+  return !snapshot.empty;
+
+}
+
+
+
+async function loadAvailableTasks(user) {
+
+  try {
+
+    const active =
+      await hasActiveTask(user.uid);
+
+
+    if (active) {
+
+      availableTasksBox.innerHTML = `
+        <div class="empty-box">
+          तुमच्याकडे आधीच Active Task आहे.
+          तो complete झाल्यानंतर नवीन task घेता येईल.
+        </div>
+      `;
+
+      return;
+    }
+
+
+    const q =
+      query(
+        collection(db, "tasks"),
+        where(
+          "status",
+          "==",
+          "available"
+        )
+      );
+
+
+    const snapshot =
+      await getDocs(q);
+
+
+    availableTasksBox.innerHTML =
+      "";
+
+
+    if (snapshot.empty) {
+
+      availableTasksBox.innerHTML = `
+        <div class="empty-box">
+          सध्या कोणतेही task उपलब्ध नाहीत.
+        </div>
+      `;
+
+      return;
+
+    }
+
+
+    snapshot.forEach(taskDoc => {
+
+      const task =
+        taskDoc.data();
+
+      const taskId =
+        taskDoc.id;
+
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "task-card";
+
+
+      card.innerHTML = `
+
+        <h3>
+          ${task.title || "Task"}
+        </h3>
+
+        <p>
+          ${task.description || ""}
+        </p>
+
+        <p>
+          <strong>Payment:</strong>
+          ₹${task.payment ?? 0}
+        </p>
+
+        <a
+          class="material-link"
+          href="${task.materialLink || "#"}"
+          target="_blank"
+        >
+          Open Material
+        </a>
+
+        <button
+          class="accept-btn"
+        >
+          Accept Task
+        </button>
+
+      `;
+
+
+      const acceptBtn =
+        card.querySelector(
+          ".accept-btn"
+        );
+
+
+      acceptBtn.addEventListener(
+        "click",
+        async () => {
+
+          acceptBtn.disabled =
+            true;
+
+          acceptBtn.textContent =
+            "Accepting...";
+
+
+          await acceptTask(
+            taskId,
+            user
+          );
+
+
+          acceptBtn.disabled =
+            false;
+
+          acceptBtn.textContent =
+            "Accept Task";
+
+        }
+      );
+
+
+      availableTasksBox
+        .appendChild(card);
+
+    });
+
+  }
+  catch(error) {
+
+    console.error(error);
+
+    availableTasksBox.innerHTML = `
+      <div class="empty-box">
+        Tasks load करताना error आला.
+      </div>
+    `;
+
+  }
+
+}
+
+
+
+async function acceptTask(taskId, user) {
+
+  try {
+
+    const alreadyActive =
+      await hasActiveTask(user.uid);
+
+
+    if (alreadyActive) {
+
+      alert(
+        "तुमच्याकडे आधीच एक Active Task आहे."
+      );
+
+      await loadAvailableTasks(user);
+
+      await loadMyActiveTask(user);
+
+      return;
+
+    }
+
+
+    const taskRef =
+      doc(
+        db,
+        "tasks",
+        taskId
+      );
+
+
+    await runTransaction(
+      db,
+      async transaction => {
+
+        const taskSnap =
+          await transaction.get(
+            taskRef
+          );
+
+
+        if (!taskSnap.exists()) {
+
+          throw new Error(
+            "Task सापडला नाही."
+          );
+
+        }
+
+
+        const task =
+          taskSnap.data();
+
+
+        if (
+          task.status !==
+          "available"
+        ) {
+
+          throw new Error(
+            "हा Task दुसऱ्या Worker ने आधीच घेतला आहे."
+          );
+
+        }
+
+
+        const now =
+          Timestamp.now();
+
+
+        const deadline =
+          Timestamp.fromMillis(
+
+            now.toMillis()
+            +
+            (
+              24 *
+              60 *
+              60 *
+              1000
+            )
+
+          );
+
+
+        transaction.update(
+          taskRef,
+          {
+
+            status:
+              "accepted",
+
+            acceptedBy:
+              user.uid,
+
+            acceptedAt:
+              now,
+
+            submissionDeadline:
+              deadline
+
+          }
+        );
+
+      }
+    );
+
+
+    alert(
+      "Task Accepted Successfully! Submit करण्यासाठी 24 तास आहेत."
+    );
+
+
+    await loadAvailableTasks(user);
+
+    await loadMyActiveTask(user);
+
+  }
+  catch(error) {
+
+    console.error(error);
+
+    alert(
+      "Task accept झाला नाही: "
+      +
+      error.message
+    );
+
+  }
+
+}
+
+
+
+async function loadMyActiveTask(user) {
+
+  try {
+
+    const q =
+      query(
+        collection(db, "tasks"),
+
+        where(
+          "acceptedBy",
+          "==",
+          user.uid
+        ),
+
+        where(
+          "status",
+          "==",
+          "accepted"
+        )
+      );
+
+
+    const snapshot =
+      await getDocs(q);
+
+
+    if (snapshot.empty) {
+
+      activeTaskBox.innerHTML = `
+        <div class="empty-box">
+          तुम्ही अजून कोणताही task accept केलेला नाही.
+        </div>
+      `;
+
+      if (countdownTimer) {
+
+        clearInterval(
+          countdownTimer
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    const taskDoc =
+      snapshot.docs[0];
+
+    const task =
+      taskDoc.data();
+
+
+    activeTaskBox.innerHTML = `
+
+      <div class="task-card">
+
+        <h3>
+          ${task.title || "Task"}
+        </h3>
+
+        <p>
+          ${task.description || ""}
+        </p>
+
+        <p>
+          <strong>
+            Payment:
+          </strong>
+
+          ₹${task.payment ?? 0}
+        </p>
+
+        <p>
+
+          <a
+            class="material-link"
+            href="${task.materialLink || "#"}"
+            target="_blank"
+          >
+            Open Google Drive Material
+          </a>
+
+        </p>
+
+        <div class="deadline">
+
+          Submission Deadline:
+
+          <span id="deadlineText">
+            -
+          </span>
+
+          <div
+            class="countdown"
+            id="countdown"
+          >
+          </div>
+
+        </div>
+
+        <div class="submit-box">
+          <label for="submissionLink">
+            Completed Work Google Drive Link
+          </label>
+
+          <input
+            id="submissionLink"
+            class="submit-input"
+            type="url"
+            placeholder="https://drive.google.com/..."
+          >
+
+          <button
+            id="submitTaskBtn"
+            class="submit-btn"
+          >
+            Submit Task
+          </button>
+        </div>
+
+      </div>
+
+    `;
+
+
+    if (
+      task.submissionDeadline
+    ) {
+
+      const deadlineDate =
+        task
+          .submissionDeadline
+          .toDate();
+
+
+      document
+        .getElementById(
+          "deadlineText"
+        )
+        .textContent =
+          deadlineDate
+            .toLocaleString();
+
+
+      startCountdown(
+        deadlineDate
+      );
+
+    }
+
+    const submitTaskBtn =
+      document.getElementById("submitTaskBtn");
+
+    submitTaskBtn.addEventListener(
+      "click",
+      async () => {
+
+        const submissionLink =
+          document
+            .getElementById("submissionLink")
+            .value
+            .trim();
+
+        if (!submissionLink) {
+          alert("Completed work ची Google Drive link टाका.");
+          return;
+        }
+
+        if (
+          !submissionLink.startsWith("https://")
+        ) {
+          alert("Valid https:// link टाका.");
+          return;
+        }
+
+        if (
+          task.submissionDeadline
+          &&
+          new Date() >
+          task.submissionDeadline.toDate()
+        ) {
+          alert("Submission deadline संपली आहे.");
+          return;
+        }
+
+        submitTaskBtn.disabled = true;
+        submitTaskBtn.textContent = "Submitting...";
+
+        await submitTask(
+          taskDoc.id,
+          user,
+          submissionLink
+        );
+
+        submitTaskBtn.disabled = false;
+        submitTaskBtn.textContent = "Submit Task";
+      }
+    );
+
+  }
+  catch(error) {
+
+    console.error(error);
+
+    activeTaskBox.innerHTML = `
+      <div class="empty-box">
+        Active Task load करताना error आला.
+      </div>
+    `;
+
+  }
+
+}
+
+
+
+async function submitTask(
+  taskId,
+  user,
+  submissionLink
+) {
+
+  try {
+
+    const taskRef =
+      doc(
+        db,
+        "tasks",
+        taskId
+      );
+
+    await runTransaction(
+      db,
+      async transaction => {
+
+        const taskSnap =
+          await transaction.get(taskRef);
+
+        if (!taskSnap.exists()) {
+          throw new Error("Task सापडला नाही.");
+        }
+
+        const task =
+          taskSnap.data();
+
+        if (
+          task.status !== "accepted"
+          ||
+          task.acceptedBy !== user.uid
+        ) {
+          throw new Error(
+            "हा task तुमचा Active Task नाही."
+          );
+        }
+
+        if (
+          task.submissionDeadline
+          &&
+          Timestamp.now().toMillis() >
+          task.submissionDeadline.toMillis()
+        ) {
+          throw new Error(
+            "Submission deadline संपली आहे."
+          );
+        }
+
+        transaction.update(
+          taskRef,
+          {
+            status: "submitted",
+            submissionLink: submissionLink,
+            submittedAt: Timestamp.now()
+          }
+        );
+
+      }
+    );
+
+    const submittedTaskSnap =
+      await getDoc(taskRef);
+
+    if (submittedTaskSnap.exists()) {
+
+      const submittedTask =
+        submittedTaskSnap.data();
+
+      await createAdminNotification({
+        user: user,
+        title: "New Task Submission 📥",
+        message:
+          `${submittedTask.title || "Task"} worker कडून submit झाला आहे. Review आवश्यक आहे.`,
+        type: "task_submitted"
+      });
+
+    }
+
+
+    alert(
+      "Task Successfully Submitted! आता Admin review करेल."
+    );
+
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+    }
+
+    await loadAvailableTasks(user);
+    await loadMyActiveTask(user);
+
+  }
+  catch(error) {
+
+    console.error(error);
+
+    alert(
+      "Task submit झाला नाही: "
+      + error.message
+    );
+
+  }
+
+}
+
+
+function startCountdown(deadlineDate) {
+
+  if (countdownTimer) {
+
+    clearInterval(
+      countdownTimer
+    );
+
+  }
+
+
+  function updateCountdown() {
+
+    const countdown =
+      document.getElementById(
+        "countdown"
+      );
+
+
+    if (!countdown)
+      return;
+
+
+    const now =
+      new Date();
+
+
+    const difference =
+      deadlineDate.getTime()
+      -
+      now.getTime();
+
+
+    if (difference <= 0) {
+
+      countdown.textContent =
+        "Deadline Expired";
+
+      clearInterval(
+        countdownTimer
+      );
+
+      return;
+
+    }
+
+
+    const hours =
+      Math.floor(
+        difference /
+        (
+          1000 *
+          60 *
+          60
+        )
+      );
+
+
+    const minutes =
+      Math.floor(
+
+        (
+          difference %
+          (
+            1000 *
+            60 *
+            60
+          )
+        )
+        /
+        (
+          1000 *
+          60
+        )
+
+      );
+
+
+    const seconds =
+      Math.floor(
+
+        (
+          difference %
+          (
+            1000 *
+            60
+          )
+        )
+        /
+        1000
+
+      );
+
+
+    countdown.textContent =
+      `${hours}h ${minutes}m ${seconds}s`;
+
+  }
+
+
+  updateCountdown();
+
+
+  countdownTimer =
+    setInterval(
+      updateCountdown,
+      1000
+    );
+
+}
+
+
+
+
+
+async function loadRejectedTasks(user) {
+
+  try {
+
+    const q =
+      query(
+        collection(db, "tasks"),
+        where("acceptedBy", "==", user.uid),
+        where("status", "==", "rejected")
+      );
+
+    const snapshot =
+      await getDocs(q);
+
+    rejectedTasksBox.innerHTML = "";
+
+    if (snapshot.empty) {
+
+      rejectedTasksBox.innerHTML = `
+        <div class="empty-box">
+          सध्या कोणताही rejected task नाही.
+        </div>
+      `;
+
+      return;
+    }
+
+    snapshot.forEach(taskDoc => {
+
+      const task =
+        taskDoc.data();
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "task-card rejected-card";
+
+      card.innerHTML = `
+
+        <h3>
+          ${task.title || "Task"}
+        </h3>
+
+        <p>
+          ${task.description || ""}
+        </p>
+
+        <p>
+          <strong>Payment:</strong>
+          ₹${task.payment ?? 0}
+        </p>
+
+        <div class="reject-reason">
+          <strong>Admin Rejection Reason:</strong><br>
+          ${task.rejectionReason || "Reason उपलब्ध नाही."}
+        </div>
+
+        <div class="resubmit-box">
+
+          <label>
+            Corrected Work Google Drive Link
+          </label>
+
+          <input
+            class="submit-input resubmit-link"
+            type="url"
+            placeholder="https://drive.google.com/..."
+          >
+
+          <button class="resubmit-btn">
+            Re-submit Task
+          </button>
+
+        </div>
+      `;
+
+      const input =
+        card.querySelector(".resubmit-link");
+
+      const button =
+        card.querySelector(".resubmit-btn");
+
+      button.addEventListener(
+        "click",
+        async () => {
+
+          const newLink =
+            input.value.trim();
+
+          if (!newLink) {
+            alert("Corrected work ची Google Drive link टाका.");
+            return;
+          }
+
+          if (!newLink.startsWith("https://")) {
+            alert("Valid https:// link टाका.");
+            return;
+          }
+
+          button.disabled = true;
+          button.textContent = "Re-submitting...";
+
+          await resubmitRejectedTask(
+            taskDoc.id,
+            user,
+            newLink
+          );
+
+          button.disabled = false;
+          button.textContent = "Re-submit Task";
+        }
+      );
+
+      rejectedTasksBox.appendChild(card);
+    });
+
+  }
+  catch(error) {
+
+    console.error(
+      "Rejected Tasks Error:",
+      error
+    );
+
+    rejectedTasksBox.innerHTML = `
+      <div class="empty-box">
+        Rejected tasks load करताना error आला.
+      </div>
+    `;
+  }
+}
+
+
+
+async function resubmitRejectedTask(
+  taskId,
+  user,
+  submissionLink
+) {
+
+  try {
+
+    const taskRef =
+      doc(db, "tasks", taskId);
+
+    await runTransaction(
+      db,
+      async transaction => {
+
+        const taskSnap =
+          await transaction.get(taskRef);
+
+        if (!taskSnap.exists()) {
+          throw new Error("Task सापडला नाही.");
+        }
+
+        const task =
+          taskSnap.data();
+
+        if (
+          task.status !== "rejected"
+          ||
+          task.acceptedBy !== user.uid
+        ) {
+          throw new Error(
+            "हा rejected task तुमचा नाही किंवा आधीच update झाला आहे."
+          );
+        }
+
+        transaction.update(
+          taskRef,
+          {
+            status: "submitted",
+            submissionLink: submissionLink,
+            submittedAt: Timestamp.now(),
+            resubmittedAt: Timestamp.now()
+          }
+        );
+      }
+    );
+
+    const resubmittedTaskSnap =
+      await getDoc(taskRef);
+
+    if (resubmittedTaskSnap.exists()) {
+
+      const resubmittedTask =
+        resubmittedTaskSnap.data();
+
+      await createAdminNotification({
+        user: user,
+        title: "Task Re-submitted 🔁",
+        message:
+          `${resubmittedTask.title || "Task"} worker कडून corrected work सह पुन्हा submit झाला आहे.`,
+        type: "task_resubmitted"
+      });
+
+    }
+
+
+    alert(
+      "Task पुन्हा Successfully Submitted! Admin पुन्हा review करेल."
+    );
+
+    await loadRejectedTasks(user);
+    await loadAvailableTasks(user);
+    await loadMyActiveTask(user);
+
+  }
+  catch(error) {
+
+    console.error(error);
+
+    alert(
+      "Task re-submit झाला नाही: "
+      + error.message
+    );
+  }
+}
+
+
+
+
+function loadPaymentDetails(worker) {
+
+  upiNameInput.value =
+    worker.upiName || "";
+
+  upiIdInput.value =
+    worker.upiId || "";
+
+  paymentPhoneInput.value =
+    worker.paymentPhone || "";
+
+}
+
+
+function isValidUpiId(value) {
+
+  return /^[A-Za-z0-9._-]{2,}@[A-Za-z0-9.-]{2,}$/.test(value);
+
+}
+
+
+async function savePaymentDetails(user) {
+
+  const upiName =
+    upiNameInput.value.trim();
+
+  const upiId =
+    upiIdInput.value.trim();
+
+  const paymentPhone =
+    paymentPhoneInput.value.trim();
+
+  paymentDetailsMessage.textContent = "";
+  paymentDetailsMessage.style.color = "";
+
+  if (upiName.length < 2) {
+    alert("UPI Account Holder Name योग्य टाका.");
+    return;
+  }
+
+  if (!isValidUpiId(upiId)) {
+    alert("Valid UPI ID टाका. उदाहरण: name@upi");
+    return;
+  }
+
+  if (!/^[6-9][0-9]{9}$/.test(paymentPhone)) {
+    alert("Valid 10 digit Indian mobile number टाका.");
+    return;
+  }
+
+  try {
+
+    savePaymentDetailsBtn.disabled = true;
+    savePaymentDetailsBtn.textContent = "Saving...";
+
+    const workerRef =
+      doc(db, "workers", user.uid);
+
+    await updateDoc(
+      workerRef,
+      {
+        upiName: upiName,
+        upiId: upiId,
+        paymentPhone: paymentPhone,
+        paymentDetailsUpdatedAt: Timestamp.now()
+      }
+    );
+
+    paymentDetailsMessage.style.color = "#146c2e";
+    paymentDetailsMessage.textContent =
+      "Payment details successfully saved.";
+
+  }
+  catch(error) {
+
+    console.error(
+      "Payment Details Save Error:",
+      error
+    );
+
+    paymentDetailsMessage.style.color = "#a40000";
+
+    if (error.code === "permission-denied") {
+      paymentDetailsMessage.textContent =
+        "Payment details save करण्यासाठी Firestore Rules update आवश्यक आहे.";
+    }
+    else {
+      paymentDetailsMessage.textContent =
+        "Payment details save झाले नाहीत: " + error.message;
+    }
+
+  }
+  finally {
+
+    savePaymentDetailsBtn.disabled = false;
+    savePaymentDetailsBtn.textContent =
+      "Save Payment Details";
+
+  }
+
+}
+
+
+
+async function loadPaymentHistory(user) {
+
+  try {
+
+    const q =
+      query(
+        collection(db, "tasks"),
+        where(
+          "acceptedBy",
+          "==",
+          user.uid
+        )
+      );
+
+    const snapshot =
+      await getDocs(q);
+
+    const paymentTasks = [];
+
+    snapshot.forEach(taskDoc => {
+
+      const task =
+        taskDoc.data();
+
+      const paymentStatus =
+        String(
+          task.paymentStatus || ""
+        ).toLowerCase();
+
+      const taskStatus =
+        String(
+          task.status || ""
+        ).toLowerCase();
+
+      if (
+        paymentStatus === "paid"
+        ||
+        paymentStatus === "pending"
+        ||
+        taskStatus === "approved"
+      ) {
+
+        paymentTasks.push({
+          id: taskDoc.id,
+          ...task
+        });
+
+      }
+
+    });
+
+
+    if (paymentTasks.length === 0) {
+
+      paymentHistoryBox.innerHTML = `
+        <div class="empty-box">
+          Payment history सध्या उपलब्ध नाही.
+        </div>
+      `;
+
+      return;
+
+    }
+
+
+    paymentTasks.sort((a, b) => {
+
+      const aTime =
+        a.paidAt?.toMillis?.()
+        ??
+        a.approvedAt?.toMillis?.()
+        ??
+        a.submittedAt?.toMillis?.()
+        ??
+        0;
+
+      const bTime =
+        b.paidAt?.toMillis?.()
+        ??
+        b.approvedAt?.toMillis?.()
+        ??
+        b.submittedAt?.toMillis?.()
+        ??
+        0;
+
+      return bTime - aTime;
+
+    });
+
+
+    paymentHistoryBox.innerHTML = "";
+
+
+    paymentTasks.forEach(task => {
+
+      const paymentStatus =
+        String(
+          task.paymentStatus
+          ||
+          (
+            String(task.status).toLowerCase() === "approved"
+              ? "pending"
+              : "-"
+          )
+        ).toLowerCase();
+
+      const paidAt =
+        task.paidAt?.toDate?.();
+
+      const approvedAt =
+        task.approvedAt?.toDate?.();
+
+      const dateText =
+        paidAt
+          ? paidAt.toLocaleString()
+          : approvedAt
+            ? approvedAt.toLocaleString()
+            : "-";
+
+      const statusText =
+        paymentStatus === "paid"
+          ? "Paid"
+          : paymentStatus === "pending"
+            ? "Pending"
+            : paymentStatus;
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "task-card";
+
+      card.innerHTML = `
+        <h3>
+          ${task.title || "Task"}
+        </h3>
+
+        <p>
+          <strong>Amount:</strong>
+          ₹${task.payment ?? 0}
+        </p>
+
+        <p>
+          <strong>Payment Status:</strong>
+          ${statusText}
+        </p>
+
+        <p>
+          <strong>
+            ${paymentStatus === "paid" ? "Paid At:" : "Approved At:"}
+          </strong>
+          ${dateText}
+        </p>
+      `;
+
+      paymentHistoryBox
+        .appendChild(card);
+
+    });
+
+  }
+  catch(error) {
+
+    console.error(
+      "Payment History Error:",
+      error
+    );
+
+    paymentHistoryBox.innerHTML = `
+      <div class="empty-box">
+        Payment history load करताना error आला.
+      </div>
+    `;
+
+  }
+
+}
+
+
+
+function loadWorkerStats(worker) {
+
+  document.getElementById(
+    "workerName"
+  ).textContent =
+    worker.fullName || "Worker";
+
+
+  document.getElementById(
+    "workerId"
+  ).textContent =
+    worker.workerId || "-";
+
+
+  document.getElementById(
+    "workerEmail"
+  ).textContent =
+    worker.email || "-";
+
+
+  document.getElementById(
+    "workerStatus"
+  ).textContent =
+    worker.accountStatus;
+
+
+  document.getElementById(
+    "accountShortStatus"
+  ).textContent =
+    worker.accountStatus;
+
+
+  document.getElementById(
+    "totalTasks"
+  ).textContent =
+    worker.totalTasks ?? 0;
+
+
+  document.getElementById(
+    "completedTasks"
+  ).textContent =
+    worker.completedTasks ?? 0;
+
+
+  document.getElementById(
+    "approvedTasks"
+  ).textContent =
+    worker.approvedTasks ?? 0;
+
+
+  document.getElementById(
+    "rejectedTasks"
+  ).textContent =
+    worker.rejectedTasks ?? 0;
+
+
+  document.getElementById(
+    "totalEarnings"
+  ).textContent =
+    worker.totalEarnings ?? 0;
+
+
+  document.getElementById(
+    "pendingEarnings"
+  ).textContent =
+    worker.pendingEarnings ?? 0;
+
+
+  document.getElementById(
+    "paidEarnings"
+  ).textContent =
+    worker.paidEarnings ?? 0;
+
+
+  const name =
+    worker.fullName || "W";
+
+
+  document.getElementById(
+    "avatar"
+  ).textContent =
+    name
+      .charAt(0)
+      .toUpperCase();
+
+}
+
+
+
+
+
+savePaymentDetailsBtn.addEventListener(
+  "click",
+  async () => {
+
+    const user =
+      auth.currentUser;
+
+    if (!user) {
+      alert("Session expired. पुन्हा login करा.");
+      return;
+    }
+
+    await savePaymentDetails(user);
+  }
+);
+
+
+
+notificationBtn.addEventListener(
+  "click",
+  async event => {
+
+    event.stopPropagation();
+
+    notificationPanel.classList.toggle("open");
+
+    const user =
+      auth.currentUser;
+
+    if (
+      notificationPanel.classList.contains("open")
+      && user
+    ) {
+      await markAllNotificationsRead(user);
+    }
+  }
+);
+
+
+document.addEventListener(
+  "click",
+  event => {
+
+    if (
+      !notificationPanel.contains(event.target)
+      &&
+      !notificationBtn.contains(event.target)
+    ) {
+      notificationPanel.classList.remove("open");
+    }
+  }
+);
+
+
+
+onAuthStateChanged(
+  auth,
+  async user => {
+
+    if (!user) {
+
+      window.location.href =
+        "worker-login.html";
+
+      return;
+
+    }
+
+
+    try {
+
+      if (
+        !user.emailVerified
+      ) {
+
+        await signOut(auth);
+
+        window.location.href =
+          "worker-login.html";
+
+        return;
+
+      }
+
+
+      const workerRef =
+        doc(
+          db,
+          "workers",
+          user.uid
+        );
+
+
+      const workerSnap =
+        await getDoc(
+          workerRef
+        );
+
+
+      if (
+        !workerSnap.exists()
+      ) {
+
+        await signOut(auth);
+
+        showError(
+          "Worker profile सापडला नाही."
+        );
+
+        return;
+
+      }
+
+
+      const worker =
+        workerSnap.data();
+
+
+      if (
+        worker.role !== "worker"
+      ) {
+
+        await signOut(auth);
+
+        showError(
+          "हा account DTE Worker account नाही."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        worker.accountStatus === "blocked"
+      ) {
+
+        await signOut(auth);
+
+        showError(
+          "Your account has been blocked by DTE Administration. कृपया DTE Admin शी संपर्क करा."
+        );
+
+        return;
+
+      }
+
+
+      if (
+        worker.accountStatus !== "active"
+      ) {
+
+        await signOut(auth);
+
+        showError(
+          "तुमचा Worker account सध्या Active नाही."
+        );
+
+        return;
+
+      }
+
+
+      loadWorkerStats(
+        worker
+      );
+
+      loadPaymentDetails(
+        worker
+      );
+
+
+      await loadAvailableTasks(
+        user
+      );
+
+
+      await loadMyActiveTask(
+        user
+      );
+
+
+      await loadRejectedTasks(
+        user
+      );
+
+
+      await loadPaymentHistory(
+        user
+      );
+
+
+      loading.style.display =
+        "none";
+
+
+      dashboard.style.display =
+        "block";
+
+    }
+    catch(error) {
+
+      console.error(error);
+
+      showError(
+        "Dashboard load करताना error आला: "
+        +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+
+logoutBtn.addEventListener(
+  "click",
+  async () => {
+
+    await signOut(auth);
+
+    window.location.href =
+      "worker-login.html";
+
+  }
+);
+
+</script>
+
+</body>
+</html>
