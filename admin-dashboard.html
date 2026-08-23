@@ -376,6 +376,49 @@
       background: #dc3545;
     }
 
+    .payment-info-box {
+      margin: 14px 0;
+      padding: 14px;
+      border: 1px solid #dfe5ee;
+      border-radius: 10px;
+      background: #f8faff;
+    }
+
+    .payment-info-box p { margin: 7px 0; }
+
+    .qr-open-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #0b57d0;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .utr-input {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px 12px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .utr-input:focus { border-color: #0b57d0; }
+
+    .payment-warning {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fff4e5;
+      color: #6d4c00;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
     .pay-btn {
       border: none;
       padding: 11px 18px;
@@ -1419,6 +1462,14 @@ async function loadWorkerDetails(
         </p>
 
         ${
+          task.transactionId
+          ?
+          `<p><strong>UTR / Transaction ID:</strong> ${task.transactionId}</p>`
+          :
+          ""
+        }
+
+        ${
           task.rejectionReason
           ?
           `
@@ -2173,8 +2224,33 @@ async function loadPendingPayments() {
           Pending
         </p>
 
+        <div class="payment-info-box">
+          <p><strong>UPI Holder:</strong> ${worker.upiName || "Not provided"}</p>
+          <p><strong>UPI ID:</strong> ${worker.upiId || "Not provided"}</p>
+          <p><strong>UPI Mobile:</strong> ${worker.paymentPhone || "Not provided"}</p>
+
+          ${
+            worker.upiQrLink
+            ?
+            `<a class="qr-open-btn" href="${worker.upiQrLink}" target="_blank" rel="noopener noreferrer">📱 Open Worker QR</a>`
+            :
+            `<p><strong>QR:</strong> Worker ने QR link दिलेली नाही.</p>`
+          }
+
+          <input
+            class="utr-input"
+            type="text"
+            maxlength="100"
+            placeholder="UTR / Transaction ID टाका"
+          >
+
+          <div class="payment-warning">
+            आधी UPI/QR वापरून प्रत्यक्ष payment करा. Payment successful झाल्यावरच UTR/Transaction ID टाकून Confirm Payment करा.
+          </div>
+        </div>
+
         <button class="pay-btn">
-          Mark as Paid
+          Confirm Payment
         </button>
 
       `;
@@ -2182,24 +2258,44 @@ async function loadPendingPayments() {
       const payBtn =
         card.querySelector(".pay-btn");
 
+      const utrInput =
+        card.querySelector(".utr-input");
+
       payBtn.addEventListener(
         "click",
         async () => {
 
+          const utr =
+            utrInput.value.trim();
+
+          if (!worker.upiId && !worker.upiQrLink) {
+            alert("Worker ने UPI ID किंवा QR link दिलेली नाही.");
+            return;
+          }
+
+          if (utr.length < 6) {
+            alert("Payment केल्यानंतर valid UTR / Transaction ID टाका.");
+            utrInput.focus();
+            return;
+          }
+
           const ok =
             confirm(
-              `₹${task.payment ?? 0} payment प्रत्यक्ष दिलं आहे का?\nConfirm केल्यावर Paid म्हणून mark होईल.`
+              `₹${task.payment ?? 0} payment प्रत्यक्ष Worker ला दिलं आहे का?\n\nUTR / Transaction ID: ${utr}\n\nConfirm केल्यावर payment Paid म्हणून final होईल.`
             );
 
           if (!ok) return;
 
           payBtn.disabled = true;
-          payBtn.textContent = "Updating...";
+          payBtn.textContent = "Confirming...";
 
-          await markTaskPaid(taskDoc.id);
+          const success =
+            await markTaskPaid(taskDoc.id, utr);
 
-          payBtn.disabled = false;
-          payBtn.textContent = "Mark as Paid";
+          if (!success) {
+            payBtn.disabled = false;
+            payBtn.textContent = "Confirm Payment";
+          }
         }
       );
 
@@ -2221,7 +2317,7 @@ async function loadPendingPayments() {
 
 
 
-async function markTaskPaid(taskId) {
+async function markTaskPaid(taskId, transactionId) {
 
   try {
 
@@ -2291,7 +2387,9 @@ async function markTaskPaid(taskId) {
           {
             paymentStatus: "paid",
             paidAt: Timestamp.now(),
-            paidBy: currentAdmin.uid
+            paidBy: currentAdmin.uid,
+            paymentMethod: "manual_upi",
+            transactionId: transactionId
           }
         );
 
@@ -2320,7 +2418,7 @@ async function markTaskPaid(taskId) {
         workerId: paidTask.acceptedBy,
         title: "Payment Paid 💰",
         message:
-          `${paidTask.title || "Task"} साठी ₹${paidTask.payment ?? 0} payment Paid म्हणून mark झाला आहे.`,
+          `${paidTask.title || "Task"} साठी ₹${paidTask.payment ?? 0} payment Paid झाला आहे. Transaction ID: ${paidTask.transactionId || "-"}`,
         type: "payment_paid"
       });
 
@@ -2328,12 +2426,14 @@ async function markTaskPaid(taskId) {
 
 
     alert(
-      "Payment Paid म्हणून mark झाला."
+      "Payment successfully confirmed. UTR / Transaction ID save झाला."
     );
 
     await loadPendingPayments();
     await loadAllWorkers();
     await loadReviewedTasks();
+
+    return true;
 
   }
   catch(error) {
@@ -2344,6 +2444,8 @@ async function markTaskPaid(taskId) {
       "Payment update करताना error आला: "
       + error.message
     );
+
+    return false;
   }
 }
 
